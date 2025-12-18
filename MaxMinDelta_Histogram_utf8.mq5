@@ -2370,7 +2370,6 @@ int WindowBarsPerChart()
 void manualScale()
 {
    // Auto-scale based on histogram buffers
-   if (ArraySize(TimeData)<2) return;
    if (ArraySize(MaxDeltaBuffer)<2) return;
 
    double minvalue=0, maxvalue=0;
@@ -2382,18 +2381,31 @@ void manualScale()
    if(LastBar_Index>NumberRates) LastBar_Index=NumberRates-1;
    if(FirstBar_Index<0) FirstBar_Index=0;
    if(LastBar_Index<0) LastBar_Index=0;
+   if(LastBar_Index<=FirstBar_Index) LastBar_Index=FirstBar_Index+1;
 
    // Find max/min across all 3 histogram buffers
-   int max_index = ArrayMaximum(MaxDeltaBuffer, FirstBar_Index, LastBar_Index-FirstBar_Index);
-   int min_index = ArrayMinimum(MinDeltaBuffer, FirstBar_Index, LastBar_Index-FirstBar_Index);
+   int max_max_index = ArrayMaximum(MaxDeltaBuffer, FirstBar_Index, LastBar_Index-FirstBar_Index);
+   int max_net_index = ArrayMaximum(NetDeltaBuffer, FirstBar_Index, LastBar_Index-FirstBar_Index);
+   int min_min_index = ArrayMinimum(MinDeltaBuffer, FirstBar_Index, LastBar_Index-FirstBar_Index);
+   int min_net_index = ArrayMinimum(NetDeltaBuffer, FirstBar_Index, LastBar_Index-FirstBar_Index);
 
-   if(max_index<0) return;
-   if(min_index<0) return;
+   if(max_max_index<0 && max_net_index<0 && min_min_index<0 && min_net_index<0) return;
 
-   maxvalue = MaxDeltaBuffer[max_index];
-   minvalue = MinDeltaBuffer[min_index];
+   // Get max value from both MaxDelta and NetDelta
+   double max1 = (max_max_index>=0) ? MaxDeltaBuffer[max_max_index] : -999999;
+   double max2 = (max_net_index>=0) ? NetDeltaBuffer[max_net_index] : -999999;
+   maxvalue = MathMax(max1, max2);
 
-   IndicatorSetDouble(INDICATOR_MAXIMUM,maxvalue+(maxvalue-minvalue)*0.1);
-   IndicatorSetDouble(INDICATOR_MINIMUM,minvalue-(maxvalue-minvalue)*0.1);
+   // Get min value from both MinDelta and NetDelta
+   double min1 = (min_min_index>=0) ? MinDeltaBuffer[min_min_index] : 999999;
+   double min2 = (min_net_index>=0) ? NetDeltaBuffer[min_net_index] : 999999;
+   minvalue = MathMin(min1, min2);
+
+   // Add 10% padding
+   double range = maxvalue - minvalue;
+   if(range < 1) range = 1;  // Avoid division by zero or too small range
+
+   IndicatorSetDouble(INDICATOR_MAXIMUM, maxvalue + range*0.1);
+   IndicatorSetDouble(INDICATOR_MINIMUM, minvalue - range*0.1);
 }
 
