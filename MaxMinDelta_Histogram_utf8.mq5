@@ -2405,9 +2405,22 @@ void manualScale()
    double range = maxvalue - minvalue;
    if(range < 1) range = 1;  // Avoid division by zero or too small range
 
-   // Force manual scale mode and set min/max
-   ChartSetInteger(0, CHART_SCALEFIX, 0, true);
-   IndicatorSetDouble(INDICATOR_MAXIMUM, maxvalue + range*0.1);
-   IndicatorSetDouble(INDICATOR_MINIMUM, minvalue - range*0.1);
+   // Set indicator scale
+   double max_scale = maxvalue + range*0.1;
+   double min_scale = minvalue - range*0.1;
+
+   // Ensure we have a reasonable range
+   if(max_scale == min_scale)
+   {
+      max_scale = maxvalue + 10;
+      min_scale = minvalue - 10;
+   }
+
+   IndicatorSetDouble(INDICATOR_MAXIMUM, max_scale);
+   IndicatorSetDouble(INDICATOR_MINIMUM, min_scale);
+
+   // Debug output
+   Comment("Scale: Min=", DoubleToString(min_scale, 2), " Max=", DoubleToString(max_scale, 2),
+           " Range=", DoubleToString(range, 2));
 }
 
