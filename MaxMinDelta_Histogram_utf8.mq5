@@ -347,19 +347,21 @@ int MainCode()
          
          
          // Populate Max/Min/Net histogram buffers (DRAW_HISTOGRAM: draws from 0 to value)
-         // Simple histogram visualization: show per-bar values from 0
-         MaxDeltaBuffer[ix] = highDelta;     // Per-bar max delta
-         MinDeltaBuffer[ix] = lowDelta;      // Per-bar min delta
-
-         // Set NetDelta: hide when zero, show only Max/Min in that case
+         // When NetDelta = 0, hide all bars (client requirement)
          if(deltaCandle == 0)
          {
-            NetDeltaBuffer[ix] = EMPTY_VALUE;  // Hide NetDelta when zero
+            MaxDeltaBuffer[ix] = EMPTY_VALUE;   // Hide Max when NetDelta=0
+            MinDeltaBuffer[ix] = EMPTY_VALUE;   // Hide Min when NetDelta=0
+            NetDeltaBuffer[ix] = EMPTY_VALUE;   // Hide Net when NetDelta=0
             NetDeltaColors[ix] = 0;
          }
          else
          {
+            // Show all three histograms when NetDelta != 0
+            MaxDeltaBuffer[ix] = highDelta;     // Per-bar max delta
+            MinDeltaBuffer[ix] = lowDelta;      // Per-bar min delta
             NetDeltaBuffer[ix] = deltaCandle;   // Per-bar net delta
+
             // Set NetDelta color: 0=Red (negative), 1=Green (positive)
             if(deltaCandle > 0)
                NetDeltaColors[ix] = 1;  // Green for positive
