@@ -23,27 +23,27 @@ int Online_Subscribe(int &, string, string, int, string, string, string, string,
 
 
 #property indicator_separate_window
-#property indicator_buffers 3
+#property indicator_buffers 4
 #property indicator_plots   3
 
 //--- plot 1: MaxDelta histogram
 #property indicator_label1  "MaxDelta"
 #property indicator_type1   DRAW_HISTOGRAM
-#property indicator_color1  clrGreen
+#property indicator_color1  clrGray
 #property indicator_width1  5
 #property indicator_style1  STYLE_SOLID
 
 //--- plot 2: MinDelta histogram
 #property indicator_label2  "MinDelta"
 #property indicator_type2   DRAW_HISTOGRAM
-#property indicator_color2  clrRed
+#property indicator_color2  clrGray
 #property indicator_width2  5
 #property indicator_style2  STYLE_SOLID
 
-//--- plot 3: NetDelta histogram
+//--- plot 3: NetDelta histogram (colored red/green based on value)
 #property indicator_label3  "NetDelta"
-#property indicator_type3   DRAW_HISTOGRAM
-#property indicator_color3  clrDodgerBlue
+#property indicator_type3   DRAW_COLOR_HISTOGRAM
+#property indicator_color3  clrRed,clrGreen
 #property indicator_width3  5
 #property indicator_style3  STYLE_SOLID
 
@@ -95,6 +95,7 @@ int Update_in_sec=15;
 double         MaxDeltaBuffer[];
 double         MinDeltaBuffer[];
 double         NetDeltaBuffer[];
+double         NetDeltaColors[];  // Color index buffer for NetDelta
 
 datetime TimeData[];
 double VolumeData[];
@@ -140,6 +141,7 @@ GUI=GUI_Show;
    SetIndexBuffer(0,MaxDeltaBuffer,INDICATOR_DATA);
    SetIndexBuffer(1,MinDeltaBuffer,INDICATOR_DATA);
    SetIndexBuffer(2,NetDeltaBuffer,INDICATOR_DATA);
+   SetIndexBuffer(3,NetDeltaColors,INDICATOR_COLOR_INDEX);
 
 //---- name for DataWindow and indicator subwindow label
    IndicatorSetString(INDICATOR_SHORTNAME,"MaxMinDelta Histogram");
@@ -151,6 +153,7 @@ GUI=GUI_Show;
    ArraySetAsSeries(MaxDeltaBuffer,false);
    ArraySetAsSeries(MinDeltaBuffer,false);
    ArraySetAsSeries(NetDeltaBuffer,false);
+   ArraySetAsSeries(NetDeltaColors,false);
    PlotIndexSetDouble(0,PLOT_EMPTY_VALUE,EMPTY_VALUE);
    PlotIndexSetDouble(1,PLOT_EMPTY_VALUE,EMPTY_VALUE);
    PlotIndexSetDouble(2,PLOT_EMPTY_VALUE,EMPTY_VALUE);
@@ -317,6 +320,7 @@ int MainCode()
           MaxDeltaBuffer[ix]=EMPTY_VALUE;
           MinDeltaBuffer[ix]=EMPTY_VALUE;
           NetDeltaBuffer[ix]=EMPTY_VALUE;
+          NetDeltaColors[ix]=0;
           ix++; continue;
       }   
 
@@ -348,6 +352,12 @@ int MainCode()
          MinDeltaBuffer[ix] = lowDelta;      // Per-bar min delta
          NetDeltaBuffer[ix] = deltaCandle;   // Per-bar net delta
 
+         // Set NetDelta color: 0=Red (negative), 1=Green (positive)
+         if(deltaCandle >= 0)
+            NetDeltaColors[ix] = 1;  // Green for positive
+         else
+            NetDeltaColors[ix] = 0;  // Red for negative
+
          cumdelta = deltaCandle;
       } else
       {
@@ -357,6 +367,7 @@ int MainCode()
           MaxDeltaBuffer[ix]=EMPTY_VALUE;
           MinDeltaBuffer[ix]=EMPTY_VALUE;
           NetDeltaBuffer[ix]=EMPTY_VALUE;
+          NetDeltaColors[ix]=0;
       }
       if (ResetSessionData && TimeToString(LastTime[ix]-SessionHour*3600-SessionMin*60,TIME_DATE)!=lastdate)
       {
