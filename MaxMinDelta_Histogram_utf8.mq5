@@ -29,22 +29,22 @@ int Online_Subscribe(int &, string, string, int, string, string, string, string,
 //--- plot 1: MaxDelta histogram
 #property indicator_label1  "MaxDelta"
 #property indicator_type1   DRAW_HISTOGRAM
-#property indicator_color1  clrLime
-#property indicator_width1  3
+#property indicator_color1  clrGreen
+#property indicator_width1  5
 #property indicator_style1  STYLE_SOLID
 
 //--- plot 2: MinDelta histogram
 #property indicator_label2  "MinDelta"
 #property indicator_type2   DRAW_HISTOGRAM
 #property indicator_color2  clrRed
-#property indicator_width2  3
+#property indicator_width2  5
 #property indicator_style2  STYLE_SOLID
 
 //--- plot 3: NetDelta histogram
 #property indicator_label3  "NetDelta"
 #property indicator_type3   DRAW_HISTOGRAM
-#property indicator_color3  clrYellow
-#property indicator_width3  3
+#property indicator_color3  clrDodgerBlue
+#property indicator_width3  5
 #property indicator_style3  STYLE_SOLID
 
 
