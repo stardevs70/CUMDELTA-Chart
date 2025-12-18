@@ -350,13 +350,22 @@ int MainCode()
          // Simple histogram visualization: show per-bar values from 0
          MaxDeltaBuffer[ix] = highDelta;     // Per-bar max delta
          MinDeltaBuffer[ix] = lowDelta;      // Per-bar min delta
-         NetDeltaBuffer[ix] = deltaCandle;   // Per-bar net delta
 
-         // Set NetDelta color: 0=Red (negative), 1=Green (positive)
-         if(deltaCandle >= 0)
-            NetDeltaColors[ix] = 1;  // Green for positive
+         // Set NetDelta: hide when zero, show only Max/Min in that case
+         if(deltaCandle == 0)
+         {
+            NetDeltaBuffer[ix] = EMPTY_VALUE;  // Hide NetDelta when zero
+            NetDeltaColors[ix] = 0;
+         }
          else
-            NetDeltaColors[ix] = 0;  // Red for negative
+         {
+            NetDeltaBuffer[ix] = deltaCandle;   // Per-bar net delta
+            // Set NetDelta color: 0=Red (negative), 1=Green (positive)
+            if(deltaCandle > 0)
+               NetDeltaColors[ix] = 1;  // Green for positive
+            else
+               NetDeltaColors[ix] = 0;  // Red for negative
+         }
 
          cumdelta = deltaCandle;
       } else
