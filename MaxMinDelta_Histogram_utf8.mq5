@@ -227,7 +227,6 @@ int OnCalculate(const int rates_total,
       NumberRates = rates_total;
       ArrayResize(LastTime, ArraySize(time));
       ArrayCopy(LastTime , time);
-      MainCode();
       return (rates_total);
 
   }
@@ -2418,9 +2417,5 @@ void manualScale()
 
    IndicatorSetDouble(INDICATOR_MAXIMUM, max_scale);
    IndicatorSetDouble(INDICATOR_MINIMUM, min_scale);
-
-   // Debug output
-   Comment("Scale: Min=", DoubleToString(min_scale, 2), " Max=", DoubleToString(max_scale, 2),
-           " Range=", DoubleToString(range, 2));
 }
 
