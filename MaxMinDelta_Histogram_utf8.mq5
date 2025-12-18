@@ -227,7 +227,8 @@ int OnCalculate(const int rates_total,
       NumberRates = rates_total;
       ArrayResize(LastTime, ArraySize(time));
       ArrayCopy(LastTime , time);
-      return MainCode();
+      MainCode();
+      return (rates_total);
 
   }
   
