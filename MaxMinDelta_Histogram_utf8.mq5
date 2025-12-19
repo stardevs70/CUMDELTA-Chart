@@ -318,17 +318,17 @@ int MainCode()
    
       //ColorCandlesColors[ix]=0;
       
-      int periodSeconds = Period_To_Minutes() * 60;  // Convert minutes to seconds
-      datetime CurrentCandle = (datetime)(MathFloor((double)LastTime[ix]/periodSeconds)*periodSeconds);
-      datetime nextCandle = CurrentCandle + periodSeconds;
+      datetime CurrentCandle = int(MathFloor(LastTime[ix]/Period_To_Minutes())*Period_To_Minutes());
+      datetime nextCandle = CurrentCandle + 60*Period_To_Minutes();
       int shiftmin=0;
       do
       {
         iBase = ArrayBsearch(TimeData,CurrentCandle+shiftmin*60);//,WHOLE_ARRAY,MODE_ASCEND);
-        shiftmin++;        
+        shiftmin++;
       } while(iBase>=0 && TimeData[iBase]<CurrentCandle && CurrentCandle+shiftmin*60 < nextCandle);
-      
-      if(ix !=NumberRates-1 && (iBase < 0 || iBase >= ArraySize(TimeData) || TimeData[iBase]<CurrentCandle || TimeData[iBase]>=nextCandle)) {
+
+      // Skip time validation for M1 - data may not align perfectly
+      if(_Period != PERIOD_M1 && ix !=NumberRates-1 && (TimeData[iBase]<CurrentCandle || TimeData[iBase]>=nextCandle)) {
           // No tick data for this candle - set histogram buffers to empty
           MaxDeltaBuffer[ix]=EMPTY_VALUE;
           MaxDeltaBase[ix]=EMPTY_VALUE;
@@ -337,19 +337,35 @@ int MainCode()
           NetDeltaBuffer[ix]=EMPTY_VALUE;
           NetDeltaColors[ix]=0;
           ix++; continue;
-      }   
+      }
+
+      // For M1, ensure iBase is valid
+      if(iBase < 0 || iBase >= ArraySize(TimeData)) {
+          MaxDeltaBuffer[ix]=EMPTY_VALUE;
+          MaxDeltaBase[ix]=EMPTY_VALUE;
+          MinDeltaBuffer[ix]=EMPTY_VALUE;
+          MinDeltaBase[ix]=EMPTY_VALUE;
+          NetDeltaBuffer[ix]=EMPTY_VALUE;
+          NetDeltaColors[ix]=0;
+          ix++; continue;
+      }
 
 
+      if (IndicatorMode == 0)
+      {
+        LastCloseCandle = DeltaCumulative;
+      }
       if (iBase >= 0)
       {
          if(!LoadMore_Time || LoadMore_Time>LastTime[ix]) { LoadMore_Time=LastTime[ix]; }                  
 
          int idx=iBase;
          int deltaCandle=0;
-         
-         int highDelta = -999999; // (int)DeltaData[idx];
-         int lowDelta =  999999; //(int)DeltaData[idx];     
-                   
+
+         // Initialize high/low to 0 so single-tick candles show properly
+         int highDelta = 0;
+         int lowDelta = 0;
+
          do
          {
            deltaCandle = deltaCandle + (int)DeltaData[idx];
@@ -358,6 +374,12 @@ int MainCode()
            idx++;
            if(ArraySize(TimeData)<=idx) break;
          } while (TimeData[idx]<nextCandle);
+
+         // If no data was processed, use deltaCandle for high/low
+         if(highDelta == 0 && lowDelta == 0 && deltaCandle != 0) {
+           highDelta = deltaCandle > 0 ? deltaCandle : 0;
+           lowDelta = deltaCandle < 0 ? deltaCandle : 0;
+         }
          
          
          
@@ -2421,23 +2443,32 @@ void manualScale()
    if(LastBar_Index<0) LastBar_Index=0;
    if(LastBar_Index<=FirstBar_Index) LastBar_Index=FirstBar_Index+1;
 
-   // Find max/min across all 3 histogram buffers
-   int max_max_index = ArrayMaximum(MaxDeltaBuffer, FirstBar_Index, LastBar_Index-FirstBar_Index);
-   int max_net_index = ArrayMaximum(NetDeltaBuffer, FirstBar_Index, LastBar_Index-FirstBar_Index);
-   int min_min_index = ArrayMinimum(MinDeltaBuffer, FirstBar_Index, LastBar_Index-FirstBar_Index);
-   int min_net_index = ArrayMinimum(NetDeltaBuffer, FirstBar_Index, LastBar_Index-FirstBar_Index);
+   // Manually find max/min excluding EMPTY_VALUE
+   maxvalue = -999999999;
+   minvalue = 999999999;
 
-   if(max_max_index<0 && max_net_index<0 && min_min_index<0 && min_net_index<0) return;
+   for(int i = FirstBar_Index; i < LastBar_Index && i < NumberRates; i++)
+   {
+      // Check MaxDeltaBuffer
+      if(MaxDeltaBuffer[i] != EMPTY_VALUE && MaxDeltaBuffer[i] < 1e308)
+      {
+         if(MaxDeltaBuffer[i] > maxvalue) maxvalue = MaxDeltaBuffer[i];
+      }
+      // Check MinDeltaBuffer
+      if(MinDeltaBuffer[i] != EMPTY_VALUE && MinDeltaBuffer[i] > -1e308)
+      {
+         if(MinDeltaBuffer[i] < minvalue) minvalue = MinDeltaBuffer[i];
+      }
+      // Check NetDeltaBuffer
+      if(NetDeltaBuffer[i] != EMPTY_VALUE && NetDeltaBuffer[i] < 1e308 && NetDeltaBuffer[i] > -1e308)
+      {
+         if(NetDeltaBuffer[i] > maxvalue) maxvalue = NetDeltaBuffer[i];
+         if(NetDeltaBuffer[i] < minvalue) minvalue = NetDeltaBuffer[i];
+      }
+   }
 
-   // Get max value from both MaxDelta and NetDelta
-   double max1 = (max_max_index>=0) ? MaxDeltaBuffer[max_max_index] : -999999;
-   double max2 = (max_net_index>=0) ? NetDeltaBuffer[max_net_index] : -999999;
-   maxvalue = MathMax(max1, max2);
-
-   // Get min value from both MinDelta and NetDelta
-   double min1 = (min_min_index>=0) ? MinDeltaBuffer[min_min_index] : 999999;
-   double min2 = (min_net_index>=0) ? NetDeltaBuffer[min_net_index] : 999999;
-   minvalue = MathMin(min1, min2);
+   // If no valid data found, return
+   if(maxvalue < -999999998 || minvalue > 999999998) return;
 
    // Add 10% padding
    double range = maxvalue - minvalue;
