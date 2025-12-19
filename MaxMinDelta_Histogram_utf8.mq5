@@ -384,44 +384,33 @@ int MainCode()
          
          
          // Populate Max/Min/Net histogram buffers (DRAW_HISTOGRAM2: draws from base to value)
-         // When NetDelta = 0, hide all bars (client requirement)
-         if(deltaCandle == 0)
-         {
-            MaxDeltaBuffer[ix] = EMPTY_VALUE;
-            MaxDeltaBase[ix] = EMPTY_VALUE;
-            MinDeltaBuffer[ix] = EMPTY_VALUE;
-            MinDeltaBase[ix] = EMPTY_VALUE;
-            NetDeltaBuffer[ix] = EMPTY_VALUE;
-            NetDeltaColors[ix] = 0;
+         // Always show grey max/min bars, even when NetDelta = 0
+         if(IndicatorMode == 0) {
+            // Cumulative mode: use cumulative values
+            int openvalue = LastCloseCandle;
+            int highvalue = highDelta + LastCloseCandle;
+            int lowvalue = lowDelta + LastCloseCandle;
+            int closevalue = deltaCandle + LastCloseCandle;
+            MaxDeltaBuffer[ix] = highvalue;      // High point
+            MaxDeltaBase[ix] = openvalue;        // Base at open
+            MinDeltaBuffer[ix] = lowvalue;       // Low point
+            MinDeltaBase[ix] = openvalue;        // Base at open
+            NetDeltaBuffer[ix] = closevalue;
+         } else {
+            // Non-cumulative mode: per-bar values from zero
+            // Always show max/min grey bars (even if highDelta==lowDelta==0)
+            MaxDeltaBuffer[ix] = highDelta;      // Per-bar max delta
+            MaxDeltaBase[ix] = 0;                // Base at zero
+            MinDeltaBuffer[ix] = lowDelta;       // Per-bar min delta
+            MinDeltaBase[ix] = 0;                // Base at zero
+            NetDeltaBuffer[ix] = deltaCandle;    // Per-bar net delta
          }
-         else
-         {
-            if(IndicatorMode == 0) {
-               // Cumulative mode: use cumulative values
-               int openvalue = LastCloseCandle;
-               int highvalue = highDelta + LastCloseCandle;
-               int lowvalue = lowDelta + LastCloseCandle;
-               int closevalue = deltaCandle + LastCloseCandle;
-               MaxDeltaBuffer[ix] = highvalue;      // High point
-               MaxDeltaBase[ix] = openvalue;        // Base at open
-               MinDeltaBuffer[ix] = lowvalue;       // Low point
-               MinDeltaBase[ix] = openvalue;        // Base at open
-               NetDeltaBuffer[ix] = closevalue;
-            } else {
-               // Non-cumulative mode: per-bar values from zero
-               MaxDeltaBuffer[ix] = highDelta;      // Per-bar max delta
-               MaxDeltaBase[ix] = 0;                // Base at zero
-               MinDeltaBuffer[ix] = lowDelta;       // Per-bar min delta
-               MinDeltaBase[ix] = 0;                // Base at zero
-               NetDeltaBuffer[ix] = deltaCandle;    // Per-bar net delta
-            }
 
-            // Set NetDelta color: 0=Red (negative), 1=Green (positive)
-            if(deltaCandle > 0)
-               NetDeltaColors[ix] = 1;  // Green for positive
-            else
-               NetDeltaColors[ix] = 0;  // Red for negative
-         }
+         // Set NetDelta color: 0=Red (negative), 1=Green (positive)
+         if(deltaCandle > 0)
+            NetDeltaColors[ix] = 1;  // Green for positive
+         else
+            NetDeltaColors[ix] = 0;  // Red for negative
 
          cumdelta = deltaCandle;
 
