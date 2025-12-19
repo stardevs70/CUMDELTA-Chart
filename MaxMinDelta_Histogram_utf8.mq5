@@ -26,25 +26,25 @@ int Online_Subscribe(int &, string, string, int, string, string, string, string,
 #property indicator_buffers 6
 #property indicator_plots   3
 
-//--- plot 1: MaxDelta histogram (DRAW_HISTOGRAM2: draws from base to value)
+//--- plot 1: MaxDelta histogram (grey, widest - drawn first/behind)
 #property indicator_label1  "MaxDelta"
 #property indicator_type1   DRAW_HISTOGRAM2
-#property indicator_color1  clrSilver
-#property indicator_width1  5
+#property indicator_color1  clrGray
+#property indicator_width1  9
 #property indicator_style1  STYLE_SOLID
 
-//--- plot 2: MinDelta histogram (DRAW_HISTOGRAM2: draws from base to value)
+//--- plot 2: MinDelta histogram (grey, widest - drawn first/behind)
 #property indicator_label2  "MinDelta"
 #property indicator_type2   DRAW_HISTOGRAM2
-#property indicator_color2  clrSilver
-#property indicator_width2  5
+#property indicator_color2  clrGray
+#property indicator_width2  9
 #property indicator_style2  STYLE_SOLID
 
-//--- plot 3: NetDelta histogram (colored red/green based on value)
+//--- plot 3: NetDelta histogram (colored red/green, narrower - drawn on top)
 #property indicator_label3  "NetDelta"
 #property indicator_type3   DRAW_COLOR_HISTOGRAM
 #property indicator_color3  clrRed,clrGreen
-#property indicator_width3  3
+#property indicator_width3  5
 #property indicator_style3  STYLE_SOLID
 
 
