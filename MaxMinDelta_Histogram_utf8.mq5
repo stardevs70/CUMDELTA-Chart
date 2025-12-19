@@ -384,7 +384,7 @@ int MainCode()
          
          
          // Populate Max/Min/Net histogram buffers (DRAW_HISTOGRAM2: draws from base to value)
-         // Always show grey max/min bars, even when NetDelta = 0
+         // Always show grey max/min bars, but hide NetDelta when deltaCandle = 0
          if(IndicatorMode == 0) {
             // Cumulative mode: use cumulative values
             int openvalue = LastCloseCandle;
@@ -395,7 +395,11 @@ int MainCode()
             MaxDeltaBase[ix] = openvalue;        // Base at open
             MinDeltaBuffer[ix] = lowvalue;       // Low point
             MinDeltaBase[ix] = openvalue;        // Base at open
-            NetDeltaBuffer[ix] = closevalue;
+            // Hide NetDelta when delta is 0
+            if(deltaCandle == 0)
+               NetDeltaBuffer[ix] = EMPTY_VALUE;
+            else
+               NetDeltaBuffer[ix] = closevalue;
          } else {
             // Non-cumulative mode: per-bar values from zero
             // Always show max/min grey bars (even if highDelta==lowDelta==0)
@@ -403,7 +407,11 @@ int MainCode()
             MaxDeltaBase[ix] = 0;                // Base at zero
             MinDeltaBuffer[ix] = lowDelta;       // Per-bar min delta
             MinDeltaBase[ix] = 0;                // Base at zero
-            NetDeltaBuffer[ix] = deltaCandle;    // Per-bar net delta
+            // Hide NetDelta when delta is 0
+            if(deltaCandle == 0)
+               NetDeltaBuffer[ix] = EMPTY_VALUE;
+            else
+               NetDeltaBuffer[ix] = deltaCandle;    // Per-bar net delta
          }
 
          // Set NetDelta color: 0=Red (negative), 1=Green (positive)
