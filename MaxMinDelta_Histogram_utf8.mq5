@@ -318,8 +318,9 @@ int MainCode()
    
       //ColorCandlesColors[ix]=0;
       
-      datetime CurrentCandle = int(MathFloor(LastTime[ix]/Period_To_Minutes())*Period_To_Minutes());
-      datetime nextCandle = CurrentCandle + 60*Period_To_Minutes();
+      int periodSeconds = Period_To_Minutes() * 60;  // Convert minutes to seconds
+      datetime CurrentCandle = (datetime)(MathFloor((double)LastTime[ix]/periodSeconds)*periodSeconds);
+      datetime nextCandle = CurrentCandle + periodSeconds;
       int shiftmin=0;
       do
       {
