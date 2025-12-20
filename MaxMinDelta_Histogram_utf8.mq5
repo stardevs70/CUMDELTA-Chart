@@ -327,9 +327,8 @@ int MainCode()
         shiftmin++;
       } while(iBase>=0 && TimeData[iBase]<CurrentCandle && CurrentCandle+shiftmin*60 < nextCandle);
 
-      // Skip time validation for M1 - data may not align perfectly
-      if(_Period != PERIOD_M1 && ix !=NumberRates-1 && (TimeData[iBase]<CurrentCandle || TimeData[iBase]>=nextCandle)) {
-          // No tick data for this candle - set histogram buffers to empty
+      // Check if iBase is valid array index
+      if(iBase < 0 || iBase >= ArraySize(TimeData)) {
           MaxDeltaBuffer[ix]=EMPTY_VALUE;
           MaxDeltaBase[ix]=EMPTY_VALUE;
           MinDeltaBuffer[ix]=EMPTY_VALUE;
@@ -339,15 +338,18 @@ int MainCode()
           ix++; continue;
       }
 
-      // For M1, ensure iBase is valid
-      if(iBase < 0 || iBase >= ArraySize(TimeData)) {
-          MaxDeltaBuffer[ix]=EMPTY_VALUE;
-          MaxDeltaBase[ix]=EMPTY_VALUE;
-          MinDeltaBuffer[ix]=EMPTY_VALUE;
-          MinDeltaBase[ix]=EMPTY_VALUE;
-          NetDeltaBuffer[ix]=EMPTY_VALUE;
-          NetDeltaColors[ix]=0;
-          ix++; continue;
+      // For non-M1 timeframes, check time alignment (skip for last bar which may be incomplete)
+      // For M1, be more lenient since tick data may not align exactly with candle times
+      if(_Period != PERIOD_M1) {
+          if(ix !=NumberRates-1 && (TimeData[iBase]<CurrentCandle || TimeData[iBase]>=nextCandle)) {
+              MaxDeltaBuffer[ix]=EMPTY_VALUE;
+              MaxDeltaBase[ix]=EMPTY_VALUE;
+              MinDeltaBuffer[ix]=EMPTY_VALUE;
+              MinDeltaBase[ix]=EMPTY_VALUE;
+              NetDeltaBuffer[ix]=EMPTY_VALUE;
+              NetDeltaColors[ix]=0;
+              ix++; continue;
+          }
       }
 
 
