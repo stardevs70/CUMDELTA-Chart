@@ -362,25 +362,24 @@ int MainCode()
          int idx=iBase;
          int deltaCandle=0;
 
-         // Track running delta and capture high/low extremes
-         int highDelta = 0;
-         int lowDelta = 0;
-         bool firstTick = true;
+         // Use same initialization as original CumDelta_Chart
+         int highDelta = -999999;
+         int lowDelta = 999999;
 
          do
          {
            deltaCandle = deltaCandle + (int)DeltaData[idx];
-           if(firstTick) {
-             highDelta = deltaCandle;
-             lowDelta = deltaCandle;
-             firstTick = false;
-           } else {
-             if(highDelta < deltaCandle) { highDelta=deltaCandle; }
-             if(lowDelta > deltaCandle) { lowDelta=deltaCandle; }
-           }
+           if(highDelta < deltaCandle) { highDelta=deltaCandle; }
+           if(lowDelta > deltaCandle) { lowDelta=deltaCandle; }
            idx++;
            if(ArraySize(TimeData)<=idx) break;
          } while (TimeData[idx]<nextCandle);
+
+         // Ensure valid high/low values (same as original)
+         if(highDelta < 0) highDelta = 0;
+         if(lowDelta > 0) lowDelta = 0;
+         if(highDelta == -999999) highDelta = deltaCandle > 0 ? deltaCandle : 0;
+         if(lowDelta == 999999) lowDelta = deltaCandle < 0 ? deltaCandle : 0;
          
          
          
