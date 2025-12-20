@@ -402,12 +402,16 @@ int MainCode()
                NetDeltaBuffer[ix] = closevalue;
          } else {
             // Non-cumulative mode: per-bar values from zero
-            // Always show max/min grey bars (even if highDelta==lowDelta==0)
+            // Grey bars show the "wick" - the part beyond the colored bar
+            // MaxDelta: from 0 to highDelta (shows full positive range)
+            // MinDelta: from 0 to lowDelta (shows full negative range)
+            // NetDelta: from 0 to deltaCandle (colored bar on top)
             MaxDeltaBuffer[ix] = highDelta;      // Per-bar max delta
             MaxDeltaBase[ix] = 0;                // Base at zero
             MinDeltaBuffer[ix] = lowDelta;       // Per-bar min delta
             MinDeltaBase[ix] = 0;                // Base at zero
-            // Hide NetDelta when delta is 0
+
+            // Hide NetDelta when delta is 0, but always show grey max/min
             if(deltaCandle == 0)
                NetDeltaBuffer[ix] = EMPTY_VALUE;
             else
