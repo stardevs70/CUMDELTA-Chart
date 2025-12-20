@@ -375,11 +375,9 @@ int MainCode()
            if(ArraySize(TimeData)<=idx) break;
          } while (TimeData[idx]<nextCandle);
 
-         // Ensure valid high/low values (same as original)
-         if(highDelta < 0) highDelta = 0;
-         if(lowDelta > 0) lowDelta = 0;
-         if(highDelta == -999999) highDelta = deltaCandle > 0 ? deltaCandle : 0;
-         if(lowDelta == 999999) lowDelta = deltaCandle < 0 ? deltaCandle : 0;
+         // Handle case where no data was processed (keep original values from loop)
+         if(highDelta == -999999) highDelta = deltaCandle;
+         if(lowDelta == 999999) lowDelta = deltaCandle;
          
          
          
