@@ -30,21 +30,21 @@ int Online_Subscribe(int &, string, string, int, string, string, string, string,
 #property indicator_label1  "MaxDelta"
 #property indicator_type1   DRAW_HISTOGRAM2
 #property indicator_color1  clrGray
-#property indicator_width1  2
+#property indicator_width1  9
 #property indicator_style1  STYLE_SOLID
 
 //--- plot 2: MinDelta histogram (grey, widest - drawn first/behind)
 #property indicator_label2  "MinDelta"
 #property indicator_type2   DRAW_HISTOGRAM2
 #property indicator_color2  clrGray
-#property indicator_width2  2
+#property indicator_width2  9
 #property indicator_style2  STYLE_SOLID
 
 //--- plot 3: NetDelta histogram (colored red/green, narrower - drawn on top)
 #property indicator_label3  "NetDelta"
 #property indicator_type3   DRAW_COLOR_HISTOGRAM
 #property indicator_color3  clrRed,clrGreen
-#property indicator_width3  2
+#property indicator_width3  5
 #property indicator_style3  STYLE_SOLID
 
 
@@ -362,24 +362,25 @@ int MainCode()
          int idx=iBase;
          int deltaCandle=0;
 
-         // Initialize high/low to 0 so single-tick candles show properly
+         // Track running delta and capture high/low extremes
          int highDelta = 0;
          int lowDelta = 0;
+         bool firstTick = true;
 
          do
          {
            deltaCandle = deltaCandle + (int)DeltaData[idx];
-           if(highDelta < deltaCandle) { highDelta=deltaCandle; }
-           if(lowDelta > deltaCandle) { lowDelta=deltaCandle; }
+           if(firstTick) {
+             highDelta = deltaCandle;
+             lowDelta = deltaCandle;
+             firstTick = false;
+           } else {
+             if(highDelta < deltaCandle) { highDelta=deltaCandle; }
+             if(lowDelta > deltaCandle) { lowDelta=deltaCandle; }
+           }
            idx++;
            if(ArraySize(TimeData)<=idx) break;
          } while (TimeData[idx]<nextCandle);
-
-         // If no data was processed, use deltaCandle for high/low
-         if(highDelta == 0 && lowDelta == 0 && deltaCandle != 0) {
-           highDelta = deltaCandle > 0 ? deltaCandle : 0;
-           lowDelta = deltaCandle < 0 ? deltaCandle : 0;
-         }
          
          
          
