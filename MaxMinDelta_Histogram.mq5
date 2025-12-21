@@ -23,29 +23,28 @@ int Online_Subscribe(int &, string, string, int, string, string, string, string,
 
 
 #property indicator_separate_window
-#property indicator_buffers 6
+#property indicator_buffers 9
 #property indicator_plots   3
 
-//--- plot 1: MaxDelta histogram (grey, widest - drawn first/behind)
+//--- plot 1: MaxDelta histogram (draws from open to high)
 #property indicator_label1  "MaxDelta"
 #property indicator_type1   DRAW_HISTOGRAM2
-#property indicator_color1  clrGray
-#property indicator_width1  9
+#property indicator_color1  clrSilver
+#property indicator_width1  2
 #property indicator_style1  STYLE_SOLID
 
-//--- plot 2: MinDelta histogram (grey, widest - drawn first/behind)
+//--- plot 2: MinDelta histogram (draws from open to low)
 #property indicator_label2  "MinDelta"
 #property indicator_type2   DRAW_HISTOGRAM2
-#property indicator_color2  clrGray
-#property indicator_width2  9
+#property indicator_color2  clrSilver
+#property indicator_width2  2
 #property indicator_style2  STYLE_SOLID
 
-//--- plot 3: NetDelta histogram (colored red/green, narrower - drawn on top)
-#property indicator_label3  "NetDelta"
-#property indicator_type3   DRAW_COLOR_HISTOGRAM
-#property indicator_color3  clrRed,clrGreen
-#property indicator_width3  5
-#property indicator_style3  STYLE_SOLID
+//--- plot 3: ColorCandles (CumDelta Chart) - drawn last (on top)
+#property indicator_label3  "CumDelta Chart"
+#property indicator_type3   DRAW_COLOR_CANDLES
+#property indicator_color3  clrRed,clrGreen,clrDarkGray
+#property indicator_width3  2
 
 
 
@@ -94,13 +93,18 @@ input string GUI_Hint="Press 'Z' to hide / 'X' to show GUI"; // GUI Hint
 int Update_in_sec=15;
 
 
-// Histogram buffers
+// MaxDelta/MinDelta histogram buffers
 double         MaxDeltaBuffer[];
-double         MaxDeltaBase[];    // Base buffer for DRAW_HISTOGRAM2
+double         MaxDeltaBase[];
 double         MinDeltaBuffer[];
-double         MinDeltaBase[];    // Base buffer for DRAW_HISTOGRAM2
-double         NetDeltaBuffer[];
-double         NetDeltaColors[];  // Color index buffer for NetDelta
+double         MinDeltaBase[];
+
+// ColorCandles buffers (OHLC + color)
+double         ColorCandlesBuffer1[];  // Open
+double         ColorCandlesBuffer2[];  // High
+double         ColorCandlesBuffer3[];  // Low
+double         ColorCandlesBuffer4[];  // Close
+double         ColorCandlesColors[];   // Color index
 
 datetime TimeData[];
 double VolumeData[];
@@ -149,9 +153,17 @@ GUI=GUI_Show;
    // Plot 1: MinDelta histogram (DRAW_HISTOGRAM2 requires 2 buffers: value and base)
    SetIndexBuffer(2,MinDeltaBuffer,INDICATOR_DATA);
    SetIndexBuffer(3,MinDeltaBase,INDICATOR_DATA);
-   // Plot 2: NetDelta histogram (colored)
-   SetIndexBuffer(4,NetDeltaBuffer,INDICATOR_DATA);
-   SetIndexBuffer(5,NetDeltaColors,INDICATOR_COLOR_INDEX);
+   // Plot 2: Color candles (OHLC + color)
+   SetIndexBuffer(4,ColorCandlesBuffer1,INDICATOR_DATA);
+   SetIndexBuffer(5,ColorCandlesBuffer2,INDICATOR_DATA);
+   SetIndexBuffer(6,ColorCandlesBuffer3,INDICATOR_DATA);
+   SetIndexBuffer(7,ColorCandlesBuffer4,INDICATOR_DATA);
+   SetIndexBuffer(8,ColorCandlesColors,INDICATOR_COLOR_INDEX);
+
+//--- symbol name for bars
+   string symbol=_Symbol;
+//--- set symbol display for candles (Plot 2)
+   PlotIndexSetString(2,PLOT_LABEL,symbol+" Open;"+symbol+" High;"+symbol+" Low;"+symbol+" Close");
 
 //---- name for DataWindow and indicator subwindow label
    IndicatorSetString(INDICATOR_SHORTNAME,"MaxMinDelta Histogram");
@@ -164,11 +176,13 @@ GUI=GUI_Show;
    ArraySetAsSeries(MaxDeltaBase,false);
    ArraySetAsSeries(MinDeltaBuffer,false);
    ArraySetAsSeries(MinDeltaBase,false);
-   ArraySetAsSeries(NetDeltaBuffer,false);
-   ArraySetAsSeries(NetDeltaColors,false);
+   ArraySetAsSeries(ColorCandlesBuffer1,false);
+   ArraySetAsSeries(ColorCandlesBuffer2,false);
+   ArraySetAsSeries(ColorCandlesBuffer3,false);
+   ArraySetAsSeries(ColorCandlesBuffer4,false);
+   ArraySetAsSeries(ColorCandlesColors,false);
    PlotIndexSetDouble(0,PLOT_EMPTY_VALUE,EMPTY_VALUE);
    PlotIndexSetDouble(1,PLOT_EMPTY_VALUE,EMPTY_VALUE);
-   PlotIndexSetDouble(2,PLOT_EMPTY_VALUE,EMPTY_VALUE);
 
    // this block do not use ClusterDelta_Server but register for unique id
    do
@@ -327,29 +341,17 @@ int MainCode()
         shiftmin++;
       } while(iBase>=0 && TimeData[iBase]<CurrentCandle && CurrentCandle+shiftmin*60 < nextCandle);
 
-      // Check if iBase is valid array index
-      if(iBase < 0 || iBase >= ArraySize(TimeData)) {
+      // Check time alignment - same as original CumDelta_Chart
+      if(ix !=NumberRates-1 && (TimeData[iBase]<CurrentCandle || TimeData[iBase]>=nextCandle)) {
+          ColorCandlesBuffer1[ix]=ColorCandlesBuffer4[ix-1];
+          ColorCandlesBuffer2[ix]=ColorCandlesBuffer4[ix-1];
+          ColorCandlesBuffer3[ix]=ColorCandlesBuffer4[ix-1];
+          ColorCandlesBuffer4[ix]=ColorCandlesBuffer4[ix-1];
           MaxDeltaBuffer[ix]=EMPTY_VALUE;
           MaxDeltaBase[ix]=EMPTY_VALUE;
           MinDeltaBuffer[ix]=EMPTY_VALUE;
           MinDeltaBase[ix]=EMPTY_VALUE;
-          NetDeltaBuffer[ix]=EMPTY_VALUE;
-          NetDeltaColors[ix]=0;
           ix++; continue;
-      }
-
-      // For non-M1 timeframes, check time alignment (skip for last bar which may be incomplete)
-      // For M1, be more lenient since tick data may not align exactly with candle times
-      if(_Period != PERIOD_M1) {
-          if(ix !=NumberRates-1 && (TimeData[iBase]<CurrentCandle || TimeData[iBase]>=nextCandle)) {
-              MaxDeltaBuffer[ix]=EMPTY_VALUE;
-              MaxDeltaBase[ix]=EMPTY_VALUE;
-              MinDeltaBuffer[ix]=EMPTY_VALUE;
-              MinDeltaBase[ix]=EMPTY_VALUE;
-              NetDeltaBuffer[ix]=EMPTY_VALUE;
-              NetDeltaColors[ix]=0;
-              ix++; continue;
-          }
       }
 
 
@@ -383,49 +385,55 @@ int MainCode()
          
          
          
-         // Populate Max/Min/Net histogram buffers (DRAW_HISTOGRAM2: draws from base to value)
-         // Always show grey max/min bars, but hide NetDelta when deltaCandle = 0
+         // Calculate OHLC values
+         highvalue= highDelta+LastCloseCandle;
+         lowvalue=  lowDelta+LastCloseCandle;
+         openvalue = LastCloseCandle;
+         closevalue = deltaCandle + LastCloseCandle;
+
+         // Populate Max/Min histogram buffers (DRAW_HISTOGRAM2: draws from base to value)
+         // In cumulative mode: histogram from candle Open to High/Low (covers wicks)
+         // In non-cumulative mode: histogram from 0 to highDelta/lowDelta
          if(IndicatorMode == 0) {
-            // Cumulative mode: use cumulative values
-            int openvalue = LastCloseCandle;
-            int highvalue = highDelta + LastCloseCandle;
-            int lowvalue = lowDelta + LastCloseCandle;
-            int closevalue = deltaCandle + LastCloseCandle;
-            MaxDeltaBuffer[ix] = highvalue;      // High point
-            MaxDeltaBase[ix] = openvalue;        // Base at open
-            MinDeltaBuffer[ix] = lowvalue;       // Low point
-            MinDeltaBase[ix] = openvalue;        // Base at open
-            // Hide NetDelta when delta is 0
-            if(deltaCandle == 0)
-               NetDeltaBuffer[ix] = EMPTY_VALUE;
-            else
-               NetDeltaBuffer[ix] = closevalue;
+            // Cumulative mode: histograms cover the wicks (from open to high/low)
+            MaxDeltaBuffer[ix]=highvalue;    // Cumulative high
+            MaxDeltaBase[ix]=openvalue;      // Candle open
+            MinDeltaBuffer[ix]=lowvalue;     // Cumulative low
+            MinDeltaBase[ix]=openvalue;      // Candle open
          } else {
-            // Non-cumulative mode: per-bar values from zero
-            // MaxDelta: grey bar from 0 to highDelta (upper wick)
-            // MinDelta: grey bar from 0 to lowDelta (lower wick)
-            // NetDelta: colored bar from 0 to deltaCandle (body, on top)
-
-            // MaxDelta histogram: draws from 0 to highDelta
-            MaxDeltaBuffer[ix] = highDelta;      // High point
-            MaxDeltaBase[ix] = 0;                // Base at zero
-
-            // MinDelta histogram: draws from 0 to lowDelta
-            MinDeltaBuffer[ix] = lowDelta;       // Low point
-            MinDeltaBase[ix] = 0;                // Base at zero
-
-            // Colored bar from 0 to deltaCandle (drawn on top)
-            if(deltaCandle == 0)
-               NetDeltaBuffer[ix] = EMPTY_VALUE;
-            else
-               NetDeltaBuffer[ix] = deltaCandle;
+            // Non-cumulative mode: histograms from 0
+            MaxDeltaBuffer[ix]=highDelta;    // Per-bar high
+            MaxDeltaBase[ix]=0;              // Zero line
+            MinDeltaBuffer[ix]=lowDelta;     // Per-bar low
+            MinDeltaBase[ix]=0;              // Zero line
          }
 
-         // Set NetDelta color: 0=Red (negative), 1=Green (positive)
-         if(deltaCandle > 0)
-            NetDeltaColors[ix] = 1;  // Green for positive
-         else
-            NetDeltaColors[ix] = 0;  // Red for negative
+         // Populate ColorCandles buffers
+         if(deltaCandle != 0)
+         {
+            if(IndicatorMode == 0) {
+               // Cumulative mode: use cumulative values
+               ColorCandlesBuffer1[ix]=openvalue; // Open (cumulative)
+               ColorCandlesBuffer2[ix]=highvalue; // High (cumulative)
+               ColorCandlesBuffer3[ix]=lowvalue;  // Low (cumulative)
+               ColorCandlesBuffer4[ix]=closevalue; // Close (cumulative)
+            } else {
+               // Non-cumulative mode: use per-bar values (from 0)
+               ColorCandlesBuffer1[ix]=0;          // Open at 0
+               ColorCandlesBuffer2[ix]=highDelta;  // High = MaxDelta
+               ColorCandlesBuffer3[ix]=lowDelta;   // Low = MinDelta
+               ColorCandlesBuffer4[ix]=deltaCandle; // Close = NetDelta
+            }
+            if(Lowest_Known_Index > ix || Lowest_Known_Index==-1) Lowest_Known_Index = ix;
+            if(ColorCandlesBuffer1[ix]<ColorCandlesBuffer4[ix])  ColorCandlesColors[ix]=1; else ColorCandlesColors[ix]=0;
+
+         } else {
+             // NetDelta = 0: still show histograms (client requirement), but no candle
+             ColorCandlesBuffer1[ix]=ColorCandlesBuffer1[ix-1];
+             ColorCandlesBuffer2[ix]=ColorCandlesBuffer2[ix-1];
+             ColorCandlesBuffer3[ix]=ColorCandlesBuffer3[ix-1];
+             ColorCandlesBuffer4[ix]=ColorCandlesBuffer4[ix-1];
+         }
 
          cumdelta = deltaCandle;
 
@@ -437,13 +445,14 @@ int MainCode()
       {
           // iBase < 0: No tick data available for this candle
           cumdelta=0;
-          // No tick data - set histogram buffers to empty
+          ColorCandlesBuffer1[ix]=ColorCandlesBuffer1[ix-1];
+          ColorCandlesBuffer2[ix]=ColorCandlesBuffer2[ix-1];
+          ColorCandlesBuffer3[ix]=ColorCandlesBuffer3[ix-1];
+          ColorCandlesBuffer4[ix]=ColorCandlesBuffer4[ix-1];
           MaxDeltaBuffer[ix]=EMPTY_VALUE;
           MaxDeltaBase[ix]=EMPTY_VALUE;
           MinDeltaBuffer[ix]=EMPTY_VALUE;
           MinDeltaBase[ix]=EMPTY_VALUE;
-          NetDeltaBuffer[ix]=EMPTY_VALUE;
-          NetDeltaColors[ix]=0;
       }
       if (ResetSessionData && TimeToString(LastTime[ix]-SessionHour*3600-SessionMin*60,TIME_DATE)!=lastdate)
       {
@@ -2463,11 +2472,14 @@ void manualScale()
       {
          if(MinDeltaBuffer[i] < minvalue) minvalue = MinDeltaBuffer[i];
       }
-      // Check NetDeltaBuffer
-      if(NetDeltaBuffer[i] != EMPTY_VALUE && NetDeltaBuffer[i] < 1e308 && NetDeltaBuffer[i] > -1e308)
+      // Check ColorCandlesBuffers (High and Low)
+      if(ColorCandlesBuffer2[i] != EMPTY_VALUE && ColorCandlesBuffer2[i] < 1e308 && ColorCandlesBuffer2[i] > -1e308)
       {
-         if(NetDeltaBuffer[i] > maxvalue) maxvalue = NetDeltaBuffer[i];
-         if(NetDeltaBuffer[i] < minvalue) minvalue = NetDeltaBuffer[i];
+         if(ColorCandlesBuffer2[i] > maxvalue) maxvalue = ColorCandlesBuffer2[i];
+      }
+      if(ColorCandlesBuffer3[i] != EMPTY_VALUE && ColorCandlesBuffer3[i] < 1e308 && ColorCandlesBuffer3[i] > -1e308)
+      {
+         if(ColorCandlesBuffer3[i] < minvalue) minvalue = ColorCandlesBuffer3[i];
       }
    }
 
