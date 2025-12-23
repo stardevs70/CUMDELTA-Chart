@@ -158,19 +158,25 @@ GUI=GUI_Show;
    SetIndexBuffer(4, NetDeltaBuffer, INDICATOR_DATA);
    SetIndexBuffer(5, NetDeltaColors, INDICATOR_COLOR_INDEX);
 
+   // Set histogram colors (Plot 0 and 1 use same gray color)
+   PlotIndexSetInteger(0, PLOT_LINE_COLOR, 0, clrSilver);
+   PlotIndexSetInteger(1, PLOT_LINE_COLOR, 0, clrSilver);
+
 //---- name for DataWindow and indicator subwindow label
    IndicatorSetString(INDICATOR_SHORTNAME,"MaxMinDelta Histogram");
 //---- indicator digits
    IndicatorSetInteger(INDICATOR_DIGITS,0);
 //----
 
-   // Initialize buffers
+   // Initialize buffers - must set series mode for all buffers
    ArraySetAsSeries(MaxDeltaBuffer,false);
+   ArraySetAsSeries(MaxDeltaBase,false);
    ArraySetAsSeries(MinDeltaBuffer,false);
+   ArraySetAsSeries(MinDeltaBase,false);
    ArraySetAsSeries(NetDeltaBuffer,false);
    ArraySetAsSeries(NetDeltaColors,false);
-   ArraySetAsSeries(MaxDeltaBase,false);
-   ArraySetAsSeries(MinDeltaBase,false);
+
+   // Set empty value for all plots
    PlotIndexSetDouble(0,PLOT_EMPTY_VALUE,EMPTY_VALUE);
    PlotIndexSetDouble(1,PLOT_EMPTY_VALUE,EMPTY_VALUE);
    PlotIndexSetDouble(2,PLOT_EMPTY_VALUE,EMPTY_VALUE);
