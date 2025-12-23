@@ -23,7 +23,7 @@ int Online_Subscribe(int &, string, string, int, string, string, string, string,
 
 
 #property indicator_separate_window
-#property indicator_buffers 7
+#property indicator_buffers 6
 #property indicator_plots   3
 
 //--- plot 1: MaxDelta histogram (DRAW_HISTOGRAM2: draws from base to value)
