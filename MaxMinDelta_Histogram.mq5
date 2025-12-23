@@ -23,19 +23,19 @@ int Online_Subscribe(int &, string, string, int, string, string, string, string,
 
 
 #property indicator_separate_window
-#property indicator_buffers 6
+#property indicator_buffers 4
 #property indicator_plots   3
 
-//--- plot 1: MaxDelta histogram (DRAW_HISTOGRAM2: draws from base to value) - wider, draws first (behind)
+//--- plot 1: MaxDelta histogram (DRAW_HISTOGRAM: draws from 0 to value) - wider, draws first (behind)
 #property indicator_label1  "MaxDelta"
-#property indicator_type1   DRAW_HISTOGRAM2
+#property indicator_type1   DRAW_HISTOGRAM
 #property indicator_color1  clrSilver
 #property indicator_width1  5
 #property indicator_style1  STYLE_SOLID
 
-//--- plot 2: MinDelta histogram (DRAW_HISTOGRAM2: draws from base to value) - wider, draws second
+//--- plot 2: MinDelta histogram (DRAW_HISTOGRAM: draws from 0 to value) - wider, draws second
 #property indicator_label2  "MinDelta"
-#property indicator_type2   DRAW_HISTOGRAM2
+#property indicator_type2   DRAW_HISTOGRAM
 #property indicator_color2  clrSilver
 #property indicator_width2  5
 #property indicator_style2  STYLE_SOLID
@@ -93,17 +93,15 @@ input string GUI_Hint="Press 'Z' to hide / 'X' to show GUI"; // GUI Hint
 int Update_in_sec=15;
 
 
-// MaxDelta histogram buffers (DRAW_HISTOGRAM2: value + base)
+// MaxDelta histogram buffer (DRAW_HISTOGRAM: draws from 0 to value)
 double         MaxDeltaBuffer[];   // High value (Plot 0 - buffer 0)
-double         MaxDeltaBase[];     // Base value (Plot 0 - buffer 1)
 
-// MinDelta histogram buffers (DRAW_HISTOGRAM2: value + base)
-double         MinDeltaBuffer[];   // Low value (Plot 1 - buffer 2)
-double         MinDeltaBase[];     // Base value (Plot 1 - buffer 3)
+// MinDelta histogram buffer (DRAW_HISTOGRAM: draws from 0 to value)
+double         MinDeltaBuffer[];   // Low value (Plot 1 - buffer 1)
 
 // NetDelta histogram buffer + color (DRAW_COLOR_HISTOGRAM)
-double         NetDeltaBuffer[];   // Net delta value (Plot 2 - buffer 4)
-double         NetDeltaColors[];   // Color index 0=Red, 1=Green (Plot 2 - buffer 5)
+double         NetDeltaBuffer[];   // Net delta value (Plot 2 - buffer 2)
+double         NetDeltaColors[];   // Color index 0=Red, 1=Green (Plot 2 - buffer 3)
 
 datetime TimeData[];
 double VolumeData[];
@@ -146,17 +144,15 @@ Custom_Start_time=Custom_Start_date;
 Custom_End_time=Custom_End_date;
 GUI=GUI_Show;
 //--- indicator buffers mapping
-   // Plot 0: MaxDelta histogram (DRAW_HISTOGRAM2: draws from base to value)
+   // Plot 0: MaxDelta histogram (DRAW_HISTOGRAM: draws from 0 to value)
    SetIndexBuffer(0, MaxDeltaBuffer, INDICATOR_DATA);
-   SetIndexBuffer(1, MaxDeltaBase, INDICATOR_DATA);
 
-   // Plot 1: MinDelta histogram (DRAW_HISTOGRAM2: draws from base to value)
-   SetIndexBuffer(2, MinDeltaBuffer, INDICATOR_DATA);
-   SetIndexBuffer(3, MinDeltaBase, INDICATOR_DATA);
+   // Plot 1: MinDelta histogram (DRAW_HISTOGRAM: draws from 0 to value)
+   SetIndexBuffer(1, MinDeltaBuffer, INDICATOR_DATA);
 
    // Plot 2: NetDelta histogram (DRAW_COLOR_HISTOGRAM: draws from 0)
-   SetIndexBuffer(4, NetDeltaBuffer, INDICATOR_DATA);
-   SetIndexBuffer(5, NetDeltaColors, INDICATOR_COLOR_INDEX);
+   SetIndexBuffer(2, NetDeltaBuffer, INDICATOR_DATA);
+   SetIndexBuffer(3, NetDeltaColors, INDICATOR_COLOR_INDEX);
 
    // Set histogram colors (Plot 0 and 1 use same gray color)
    PlotIndexSetInteger(0, PLOT_LINE_COLOR, 0, clrSilver);
@@ -170,9 +166,7 @@ GUI=GUI_Show;
 
    // Initialize buffers - must set series mode for all buffers
    ArraySetAsSeries(MaxDeltaBuffer,false);
-   ArraySetAsSeries(MaxDeltaBase,false);
    ArraySetAsSeries(MinDeltaBuffer,false);
-   ArraySetAsSeries(MinDeltaBase,false);
    ArraySetAsSeries(NetDeltaBuffer,false);
    ArraySetAsSeries(NetDeltaColors,false);
 
@@ -341,9 +335,7 @@ int MainCode()
       // Check time alignment - same as original CumDelta_Chart
       if(ix !=NumberRates-1 && (TimeData[iBase]<CurrentCandle || TimeData[iBase]>=nextCandle)) {
           MaxDeltaBuffer[ix]=EMPTY_VALUE;
-          MaxDeltaBase[ix]=EMPTY_VALUE;
           MinDeltaBuffer[ix]=EMPTY_VALUE;
-          MinDeltaBase[ix]=EMPTY_VALUE;
           NetDeltaBuffer[ix]=EMPTY_VALUE;
           NetDeltaColors[ix]=0;
           ix++; continue;
@@ -386,22 +378,11 @@ int MainCode()
          openvalue = LastCloseCandle;
          closevalue = deltaCandle + LastCloseCandle;
 
-         // Populate Max/Min histogram buffers (DRAW_HISTOGRAM2: draws from base to value)
-         // In cumulative mode: histogram covers wicks (from open to high/low)
-         // In non-cumulative mode: histogram draws from 0 to per-bar high/low
-         if(IndicatorMode == 0) {
-            // Cumulative mode: histogram from open to high/low
-            MaxDeltaBuffer[ix] = highvalue;    // Cumulative high (highDelta + LastCloseCandle)
-            MaxDeltaBase[ix] = openvalue;      // Candle open
-            MinDeltaBuffer[ix] = lowvalue;     // Cumulative low (lowDelta + LastCloseCandle)
-            MinDeltaBase[ix] = openvalue;      // Candle open
-         } else {
-            // Non-cumulative mode: histogram from 0 to per-bar high/low
-            MaxDeltaBuffer[ix] = highDelta;    // Per-bar max delta
-            MaxDeltaBase[ix] = 0;              // Zero line
-            MinDeltaBuffer[ix] = lowDelta;     // Per-bar min delta
-            MinDeltaBase[ix] = 0;              // Zero line
-         }
+         // Populate Max/Min histogram buffers (DRAW_HISTOGRAM: draws from 0 to value)
+         // Both modes: histogram draws from 0 to per-bar high/low values
+         // This ensures Max/Min are always visible relative to zero line
+         MaxDeltaBuffer[ix] = highDelta;    // Per-bar max delta (e.g., 106)
+         MinDeltaBuffer[ix] = lowDelta;     // Per-bar min delta (e.g., -1)
 
          // Populate NetDelta histogram buffer
          if(deltaCandle != 0)
@@ -432,9 +413,7 @@ int MainCode()
           // iBase < 0: No tick data available for this candle
           cumdelta=0;
           MaxDeltaBuffer[ix]=EMPTY_VALUE;
-          MaxDeltaBase[ix]=EMPTY_VALUE;
           MinDeltaBuffer[ix]=EMPTY_VALUE;
-          MinDeltaBase[ix]=EMPTY_VALUE;
           NetDeltaBuffer[ix]=EMPTY_VALUE;
           NetDeltaColors[ix]=0;
       }
