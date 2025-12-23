@@ -433,6 +433,7 @@ int MainCode()
              ColorCandlesBuffer2[ix]=ColorCandlesBuffer2[ix-1];
              ColorCandlesBuffer3[ix]=ColorCandlesBuffer3[ix-1];
              ColorCandlesBuffer4[ix]=ColorCandlesBuffer4[ix-1];
+             ColorCandlesColors[ix]=2;  // DarkGray for zero delta
          }
 
          cumdelta = deltaCandle;
