@@ -3,7 +3,7 @@
 #property description "ClusterDelta Premium CumDelta, Chart Mod, Version 5.6"
 #property description "\nDelta Indicator show difference between ASK volume and BID volume. This indicator shows how delta changing during some period so it shows total sum of delta values. Data looks like a curve of changing delta values."
 #property description "\nMore information can be found here: https://clusterdelta.com/cumdelta"
-#property version "5.70"  // v30 - Max/Min show even when deltaCandle=0
+#property version "5.71"  // v31 - Fix 1M Max/Min display
 
 #define RGB(r,g,b)  (uint)(0xff<<24|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
 #define ARGB(a,r,g,b)  ((uchar(a)<<24)|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
@@ -26,21 +26,21 @@ int Online_Subscribe(int &, string, string, int, string, string, string, string,
 #property indicator_buffers 9
 #property indicator_plots   3
 
-//--- plot 1: MaxDelta histogram (draws from open to high)
+//--- plot 1: MaxDelta histogram (draws from base to high) - WIDER than candles
 #property indicator_label1  "MaxDelta"
 #property indicator_type1   DRAW_HISTOGRAM2
 #property indicator_color1  clrSilver
-#property indicator_width1  2
+#property indicator_width1  4
 #property indicator_style1  STYLE_SOLID
 
-//--- plot 2: MinDelta histogram (draws from open to low)
+//--- plot 2: MinDelta histogram (draws from base to low) - WIDER than candles
 #property indicator_label2  "MinDelta"
 #property indicator_type2   DRAW_HISTOGRAM2
 #property indicator_color2  clrSilver
-#property indicator_width2  2
+#property indicator_width2  4
 #property indicator_style2  STYLE_SOLID
 
-//--- plot 3: ColorCandles (CumDelta Chart) - drawn last (on top)
+//--- plot 3: ColorCandles (CumDelta Chart) - drawn last (on top), narrower
 #property indicator_label3  "CumDelta Chart"
 #property indicator_type3   DRAW_COLOR_CANDLES
 #property indicator_color3  clrRed,clrGreen,clrDarkGray
@@ -179,7 +179,7 @@ GUI=GUI_Show;
    PlotIndexSetString(2,PLOT_LABEL,symbol+" Open;"+symbol+" High;"+symbol+" Low;"+symbol+" Close");
 
 //---- name for DataWindow and indicator subwindow label
-   IndicatorSetString(INDICATOR_SHORTNAME,"CumDelta v30");
+   IndicatorSetString(INDICATOR_SHORTNAME,"CumDelta v31");
 //---- indicator digits
    IndicatorSetInteger(INDICATOR_DIGITS,0);
 //----
