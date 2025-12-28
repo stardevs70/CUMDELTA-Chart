@@ -3,7 +3,7 @@
 #property description "ClusterDelta Premium CumDelta, Chart Mod, Version 5.6"
 #property description "\nDelta Indicator show difference between ASK volume and BID volume. This indicator shows how delta changing during some period so it shows total sum of delta values. Data looks like a curve of changing delta values."
 #property description "\nMore information can be found here: https://clusterdelta.com/cumdelta"
-#property version "5.61"
+#property version "5.70"  // v30 - Max/Min show even when deltaCandle=0
 
 #define RGB(r,g,b)  (uint)(0xff<<24|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
 #define ARGB(a,r,g,b)  ((uchar(a)<<24)|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
@@ -179,7 +179,7 @@ GUI=GUI_Show;
    PlotIndexSetString(2,PLOT_LABEL,symbol+" Open;"+symbol+" High;"+symbol+" Low;"+symbol+" Close");
 
 //---- name for DataWindow and indicator subwindow label
-   IndicatorSetString(INDICATOR_SHORTNAME,"ClusterDelta CumDeltaChart");
+   IndicatorSetString(INDICATOR_SHORTNAME,"CumDelta v30");
 //---- indicator digits
    IndicatorSetInteger(INDICATOR_DIGITS,0);
 //----
