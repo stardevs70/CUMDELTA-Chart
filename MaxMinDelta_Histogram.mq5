@@ -3,7 +3,7 @@
 #property description "ClusterDelta Premium CumDelta, Chart Mod, Version 5.6"
 #property description "\nDelta Indicator show difference between ASK volume and BID volume. This indicator shows how delta changing during some period so it shows total sum of delta values. Data looks like a curve of changing delta values."
 #property description "\nMore information can be found here: https://clusterdelta.com/cumdelta"
-#property version "5.71"  // v31 - Fix 1M Max/Min display
+#property version "5.72"  // v32 - Fix: show Max/Min wicks even when deltaCandle=0
 
 #define RGB(r,g,b)  (uint)(0xff<<24|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
 #define ARGB(a,r,g,b)  ((uchar(a)<<24)|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
@@ -179,7 +179,7 @@ GUI=GUI_Show;
    PlotIndexSetString(2,PLOT_LABEL,symbol+" Open;"+symbol+" High;"+symbol+" Low;"+symbol+" Close");
 
 //---- name for DataWindow and indicator subwindow label
-   IndicatorSetString(INDICATOR_SHORTNAME,"CumDelta v31");
+   IndicatorSetString(INDICATOR_SHORTNAME,"CumDelta v32");
 //---- indicator digits
    IndicatorSetInteger(INDICATOR_DIGITS,0);
 //----
@@ -441,13 +441,21 @@ int MainCode()
             if(ColorCandlesBuffer1[ix]<ColorCandlesBuffer4[ix])  ColorCandlesColors[ix]=1; else ColorCandlesColors[ix]=0;
 
          } else {
-             // NetDelta = 0: still show histograms (client requirement), but no candle
-             ColorCandlesBuffer1[ix]=ColorCandlesBuffer1[ix-1];
-             ColorCandlesBuffer2[ix]=ColorCandlesBuffer2[ix-1];
-             ColorCandlesBuffer3[ix]=ColorCandlesBuffer3[ix-1];
-             ColorCandlesBuffer4[ix]=ColorCandlesBuffer4[ix-1];
-             ColorCandlesColors[ix]=2;
-             // Keep histogram values (already set above) - don't reset to EMPTY_VALUE
+             // NetDelta = 0: still show Max/Min wicks even with zero delta
+             if(IndicatorMode == 0) {
+                // Cumulative mode
+                ColorCandlesBuffer1[ix]=openvalue;   // Open
+                ColorCandlesBuffer2[ix]=highvalue;   // High (wick top)
+                ColorCandlesBuffer3[ix]=lowvalue;    // Low (wick bottom)
+                ColorCandlesBuffer4[ix]=openvalue;   // Close = Open (flat body, but wicks show)
+             } else {
+                // Non-cumulative mode
+                ColorCandlesBuffer1[ix]=0;           // Open at 0
+                ColorCandlesBuffer2[ix]=highDelta;   // High (wick top)
+                ColorCandlesBuffer3[ix]=lowDelta;    // Low (wick bottom)
+                ColorCandlesBuffer4[ix]=0;           // Close at 0 (flat body, but wicks show)
+             }
+             ColorCandlesColors[ix]=2;  // Gray color for zero delta
          }
         
          cumdelta = deltaCandle;
