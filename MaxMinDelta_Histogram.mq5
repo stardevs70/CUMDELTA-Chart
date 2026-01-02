@@ -3,7 +3,7 @@
 #property description "ClusterDelta Premium CumDelta, Chart Mod, Version 5.6"
 #property description "\nDelta Indicator show difference between ASK volume and BID volume. This indicator shows how delta changing during some period so it shows total sum of delta values. Data looks like a curve of changing delta values."
 #property description "\nMore information can be found here: https://clusterdelta.com/cumdelta"
-#property version "5.72"  // v32 - Fix: show Max/Min wicks even when deltaCandle=0
+#property version "5.73"  // v33 - Fix M1 candle time calculation bug
 
 #define RGB(r,g,b)  (uint)(0xff<<24|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
 #define ARGB(a,r,g,b)  ((uchar(a)<<24)|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
@@ -343,9 +343,11 @@ int MainCode()
    {
    
       //ColorCandlesColors[ix]=0;
-      
-      datetime CurrentCandle = int(MathFloor(LastTime[ix]/Period_To_Minutes())*Period_To_Minutes());
-      datetime nextCandle = CurrentCandle + 60*Period_To_Minutes();
+
+      // FIX: Use PeriodSeconds for correct candle time alignment on all timeframes including M1
+      int tf_seconds = PeriodSeconds(_Period);
+      datetime CurrentCandle = (LastTime[ix] / tf_seconds) * tf_seconds;
+      datetime nextCandle = CurrentCandle + tf_seconds;
       int shiftmin=0;
       do
       {
