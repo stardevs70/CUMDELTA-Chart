@@ -3,7 +3,7 @@
 #property description "ClusterDelta Premium CumDelta, Chart Mod, Version 5.6"
 #property description "\nDelta Indicator show difference between ASK volume and BID volume. This indicator shows how delta changing during some period so it shows total sum of delta values. Data looks like a curve of changing delta values."
 #property description "\nMore information can be found here: https://clusterdelta.com/cumdelta"
-#property version "5.73"  // v33 - Fix M1 candle time calculation bug
+#property version "5.74"  // v34 - Complete M1 fix: all time calcs use PeriodSeconds
 
 #define RGB(r,g,b)  (uint)(0xff<<24|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
 #define ARGB(a,r,g,b)  ((uchar(a)<<24)|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
@@ -351,8 +351,9 @@ int MainCode()
       int shiftmin=0;
       do
       {
-        iBase = ArrayBsearch(TimeData,CurrentCandle+shiftmin*60);//,WHOLE_ARRAY,MODE_ASCEND);
-        shiftmin++;        
+        // Use 60 second increments for searching within candle (tick data is 1-minute resolution)
+        iBase = ArrayBsearch(TimeData,CurrentCandle+shiftmin*60);
+        shiftmin++;
       } while(iBase>=0 && TimeData[iBase]<CurrentCandle && CurrentCandle+shiftmin*60 < nextCandle);
       
       if(ix !=NumberRates-1 && (TimeData[iBase]<CurrentCandle || TimeData[iBase]>=nextCandle)) {
