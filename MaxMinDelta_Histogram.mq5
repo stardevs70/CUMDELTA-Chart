@@ -3,7 +3,7 @@
 #property description "ClusterDelta Premium CumDelta, Chart Mod, Version 5.6"
 #property description "\nDelta Indicator show difference between ASK volume and BID volume. This indicator shows how delta changing during some period so it shows total sum of delta values. Data looks like a curve of changing delta values."
 #property description "\nMore information can be found here: https://clusterdelta.com/cumdelta"
-#property version "5.78"  // v38 - Track actual data only: init high/low to 0 (open), no artificial extension
+#property version "5.79"  // v39 - Cumulative uses actual extremes, non-cumulative starts from 0
 
 #define RGB(r,g,b)  (uint)(0xff<<24|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
 #define ARGB(a,r,g,b)  ((uchar(a)<<24)|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
@@ -383,10 +383,10 @@ int MainCode()
          int idx=iBase;
          int deltaCandle=0;
 
-         // Track actual extremes during accumulation
-         // Start from 0 (the open) so we capture the full range from open to extreme
-         int highDelta = 0;
-         int lowDelta = 0;
+         // Cumulative mode: track actual extremes only
+         // Non-cumulative mode: start from 0 (open) to show wick from 0 to extreme
+         int highDelta = (IndicatorMode == 0) ? -999999 : 0;
+         int lowDelta = (IndicatorMode == 0) ? 999999 : 0;
 
          do
          {
