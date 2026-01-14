@@ -3,7 +3,7 @@
 #property description "ClusterDelta Premium CumDelta, Chart Mod, Version 5.6"
 #property description "\nDelta Indicator show difference between ASK volume and BID volume. This indicator shows how delta changing during some period so it shows total sum of delta values. Data looks like a curve of changing delta values."
 #property description "\nMore information can be found here: https://clusterdelta.com/cumdelta"
-#property version "5.75"  // v35 - Fix M1 wicks: initialize highDelta/lowDelta to 0
+#property version "5.76"  // v36 - Fix M1 wicks only in non-cumulative mode
 
 #define RGB(r,g,b)  (uint)(0xff<<24|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
 #define ARGB(a,r,g,b)  ((uchar(a)<<24)|(uchar(r)<<16)|(uchar(g)<<8)|uchar(b))
@@ -383,10 +383,18 @@ int MainCode()
          int idx=iBase;
          int deltaCandle=0;
 
-         // FIX for M1: Initialize high/low to 0 (the starting point/open)
-         // This ensures wicks are visible even with single data point per candle
-         int highDelta = 0;
-         int lowDelta = 0;
+         // For non-cumulative mode (M1 fix): Initialize to 0 so wicks show from open
+         // For cumulative mode: Use extreme values to track actual high/low
+         int highDelta, lowDelta;
+         if(IndicatorMode == 0) {
+            // Cumulative mode: track actual extremes
+            highDelta = -999999;
+            lowDelta = 999999;
+         } else {
+            // Non-cumulative mode: include 0 (open) in range for visible wicks
+            highDelta = 0;
+            lowDelta = 0;
+         }
 
          do
          {
